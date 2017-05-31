@@ -1,17 +1,50 @@
-/// ```
-/// use detrojt::{TyConst, get_ty_const, get_ty_const_key};
-///
-/// #[derive(Debug, PartialEq, Eq)]
-/// struct Size(usize);
-///
-/// impl<T: 'static> TyConst<T> for Size {
-///     fn get_data() -> Self { Size(std::mem::size_of::<T>()) }
-/// }
-///
-/// assert_eq!(get_ty_const(get_ty_const_key::<Size, ()>()), Some(Size(0)));
-/// assert_eq!(get_ty_const(get_ty_const_key::<Size, i64>()), Some(Size(8)));
-/// assert_eq!(get_ty_const::<Size>(1), None);
-/// ```
+//! A hack to support deserialization of arbitrary trait objects.
+//!
+//! The core of the library rests upon the trio `TyConst`, `get_ty_const`, and
+//! `get_ty_const_key`.  They provide a mechanism for looking up data
+//! associated with a type using a persistent identifier ("key").
+//!
+//! `D: TyConst<T>` is trait used to define such data.  Each implementation
+//! associates an arbitrary value of type `D` (i.e. `Self`) with the type
+//! parameter `T`.  Conceptually, it's as if every `D` has its own table of
+//! data, indexed by `T`.  Within a given table, every `T` is associated with
+//! a unique `usize` key.
+//!
+//! `get_ty_const_key` returns the unique key for the data associated with `T`
+//! in the table of `D`.  The key is persistent (serializable): it can be used
+//! for a later execution of the same program.  The key is only guaranteed to
+//! be unique for a given `D` (i.e. the key is meaningless without knowing
+//! what `D` is).
+//!
+//! `get_ty_const` uses the key to retrieve the data `D` associated with `T`
+//! without knowing what `T` was.  If the key is invalid, then `None` is
+//! returned.
+//!
+//! ## Example
+//!
+//! For a more interesting example, see the [`serde`](serde/index.html)
+//! submodule.
+//!
+//! ```
+//! use detrojt::{TyConst, get_ty_const, get_ty_const_key};
+//!
+//! #[derive(Debug, PartialEq, Eq)]
+//! struct Size(usize);
+//!
+//! impl<T: 'static> TyConst<T> for Size {
+//!     fn get_data() -> Self { Size(std::mem::size_of::<T>()) }
+//! }
+//!
+//! assert_eq!(get_ty_const(get_ty_const_key::<Size, ()>()), Some(Size(0)));
+//! assert_eq!(get_ty_const(get_ty_const_key::<Size, i64>()), Some(Size(8)));
+//! assert_eq!(get_ty_const::<Size>(1), None);
+//! ```
+
+extern crate serde as libserde;
+extern crate serde_json;
+
+pub mod serde;
+
 use std::any::TypeId;
 use std::io::Write;
 use std::marker::PhantomData;
@@ -63,11 +96,13 @@ impl<D: TyConst<T>, T: ?Sized + 'static> TyConstImpl<D> for Dummy<T> {
     }
 }
 
-/// This represents a mapping from a type T to some data of type `D`.
+/// This represents a mapping from a type T to some data of type `Self` (also
+/// referred to as `D` in other places).
 ///
 /// (The ordering of type parameters here is needed to avoid problems due to
 /// orphan rules.)
 pub trait TyConst<T: ?Sized + 'static>: Sized + 'static {
+    /// Retrieve the data.
     fn get_data() -> Self;
 }
 
@@ -85,8 +120,9 @@ pub fn get_ty_const_key<D: TyConst<T>, T: ?Sized + 'static>() -> usize {
 /// Get the data in the impl for the type that matches the given key.
 /// If no such impl is found, returns `None`.
 ///
-/// **Although unlikely, calling this on an invalid key may cause arbitrary
-/// code execution (or a crash if you're lucky).**
+/// **Due to limitations of the current implementation, calling this on an
+/// invalid key may sometimes cause arbitrary code execution (or a crash if
+/// you're lucky).**
 pub fn get_ty_const<D: 'static>(key: usize) -> Option<D> {
     unsafe {
         let r0: TraitObject = std::mem::transmute(&() as &Send);
@@ -104,25 +140,5 @@ pub fn get_ty_const<D: 'static>(key: usize) -> Option<D> {
             return None;
         }
         Some(r.get())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std;
-
-    #[derive(Debug, PartialEq, Eq)]
-    struct Size(usize);
-
-    impl<T: 'static> TyConst<T> for Size {
-        fn get_data() -> Self { Size(std::mem::size_of::<T>()) }
-    }
-
-    #[test]
-    fn it_works() {
-        assert_eq!(get_ty_const(get_ty_const_key::<Size, ()>()), Some(Size(0)));
-        assert_eq!(get_ty_const(get_ty_const_key::<Size, i64>()), Some(Size(8)));
-        assert_eq!(get_ty_const::<Size>(1), None);
     }
 }

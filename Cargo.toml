@@ -1,0 +1,7 @@
+[package]
+name = "detrojt"
+version = "0.1.0"
+authors = ["Phil Ruffwind <rf@rufflewind.com>"]
+
+[dependencies]
+serde = "1.0.8"

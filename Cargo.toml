@@ -2,6 +2,12 @@
 name = "detrojt"
 version = "0.1.0"
 authors = ["Phil Ruffwind <rf@rufflewind.com>"]
+description = "A hack to support deserialization of arbitrary trait objects"
+documentation = "https://rufflewind.com/detrojt"
+repository = "https://github.com/Rufflewind/detrojt"
+readme = "README.md"
+license = "MIT/Apache-2.0"
+exclude = [".gitignore"]
 
 [dependencies]
 serde = "1.0.8"

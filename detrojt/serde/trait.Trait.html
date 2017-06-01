@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Trait` trait in crate `detrojt`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Trait">
+
+    <title>detrojt::serde::Trait - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../normalize.css">
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc trait">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'>Trait Trait</p><div class="block items"><ul><li><a href="#required-methods">Required Methods</a></li><li><a href="#implementors">Implementors</a></li></ul></div><p class='location'><a href='../index.html'>detrojt</a>::<wbr><a href='index.html'>serde</a></p><script>window.sidebarCurrent = {name: 'Trait', ty: 'trait', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content">
+<h1 class='fqn'><span class='in-band'>Trait <a href='../index.html'>detrojt</a>::<wbr><a href='index.html'>serde</a>::<wbr><a class="trait" href=''>Trait</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a class='srclink' href='../../src/detrojt/serde.rs.html#131-143' title='goto source code'>[src]</a></span></h1>
+<pre class='rust trait'>pub trait Trait&lt;S:&nbsp;<a class="trait" href="../../detrojt/serde/trait.InterSerialize.html" title="trait detrojt::serde::InterSerialize">InterSerialize</a>, U:&nbsp;<a class="trait" href="../../detrojt/serde/trait.HasInterDeserialize.html" title="trait detrojt::serde::HasInterDeserialize">HasInterDeserialize</a>&gt; {
+    fn <a href='#tymethod.serialize_inner' class='fnname'>serialize_inner</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;S, <a class="struct" href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html" title="struct alloc::boxed::Box">Box</a>&lt;<a class="trait" href="https://doc.rust-lang.org/nightly/std/error/trait.Error.html" title="trait std::error::Error">Error</a>&gt;&gt;;
+    fn <a href='#tymethod.ty_const_key' class='fnname'>ty_const_key</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>;
+}</pre><div class='docblock'><p>Supertrait for adding serialization support to user-defined traits.</p>
+
+<p>If you want to define your own trait with serialization support, you will
+want to inherit from this trait and specify:</p>
+
+<ul>
+<li><code>S</code>: the intermediate serialization format,</li>
+<li><code>U</code>: the trait object type, which also indirectly specifies the
+intermediate deserialization format through <code>HasInterDeserialize</code>.</li>
+</ul>
+
+<p>The intermediate serialization formats are used to work around the fact
+that trait objects have to be specialized for a concrete format.  For the
+most part you can just pick a generic format such as <code>serde_json::Value</code>.</p>
+
+<p>The trait object type <code>U</code> should be the boxed form of your user-defined
+trait.  You probably have to wrap it in a newtype to avoid circular trait
+declarations.</p>
+
+<p>In order for serialization to work, concrete implementations of your trait
+must satisfy the bound <code>Into&lt;U&gt; + Serialize + DeserializeOwned + &#39;static</code>.</p>
+</div>
+            <h2 id='required-methods'>Required Methods</h2>
+            <div class='methods'>
+        <h3 id='tymethod.serialize_inner' class='method'><span id='serialize_inner.v' class='invisible'><code>fn <a href='#tymethod.serialize_inner' class='fnname'>serialize_inner</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;S, <a class="struct" href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html" title="struct alloc::boxed::Box">Box</a>&lt;<a class="trait" href="https://doc.rust-lang.org/nightly/std/error/trait.Error.html" title="trait std::error::Error">Error</a>&gt;&gt;</code></span></h3><div class='docblock'><p>Serialize the inner object.</p>
+
+<p>You should not implement this trait.  It is automatically provided
+through the blanket implementation.</p>
+</div><h3 id='tymethod.ty_const_key' class='method'><span id='ty_const_key.v' class='invisible'><code>fn <a href='#tymethod.ty_const_key' class='fnname'>ty_const_key</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a></code></span></h3><div class='docblock'><p>Retrieve the key associated with the deserializer</p>
+
+<p>You should not implement this trait.  It is automatically provided
+through the blanket implementation.</p>
+</div></div>
+        <h2 id='implementors'>Implementors</h2>
+        <ul class='item-list' id='implementors-list'>
+    <li><code>impl&lt;S, U, T&gt; Trait&lt;S, U&gt; for T <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;S: <a class="trait" href="../../detrojt/serde/trait.InterSerialize.html" title="trait detrojt::serde::InterSerialize">InterSerialize</a>,<br>&nbsp;&nbsp;&nbsp;&nbsp;U: <a class="trait" href="../../detrojt/serde/trait.HasInterDeserialize.html" title="trait detrojt::serde::HasInterDeserialize">HasInterDeserialize</a>,<br>&nbsp;&nbsp;&nbsp;&nbsp;T: <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html" title="trait core::convert::Into">Into</a>&lt;U&gt; + <a class="trait" href="../../serde/ser/trait.Serialize.html" title="trait serde::ser::Serialize">Serialize</a> + <a class="trait" href="../../serde/de/trait.DeserializeOwned.html" title="trait serde::de::DeserializeOwned">DeserializeOwned</a> + 'static,&nbsp;</span></code></li>
+</ul><script type="text/javascript" async
+                         src="../../implementors/detrojt/serde/trait.Trait.js">
+                 </script></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "detrojt";
+    </script>
+    <script src="../../main.js"></script>
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

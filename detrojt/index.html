@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `detrojt` crate.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, detrojt">
+
+    <title>detrojt - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../normalize.css">
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc mod">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'>Crate detrojt</p><div class="block items"><ul><li><a href="#modules">Modules</a></li><li><a href="#traits">Traits</a></li><li><a href="#functions">Functions</a></li></ul></div><p class='location'></p><script>window.sidebarCurrent = {name: 'detrojt', ty: 'mod', relpath: '../'};</script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content">
+<h1 class='fqn'><span class='in-band'>Crate <a class="mod" href=''>detrojt</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a class='srclink' href='../src/detrojt/lib.rs.html#1-200' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>A hack to support deserialization of arbitrary trait objects.</p>
+
+<p>This an implementation of a workaround for <a href="https://github.com/rust-lang/rfcs/issues/668">rust-lang/rfcs#668 &quot;Encodable
+trait objects&quot;</a>.</p>
+
+<p><strong>See <a href="https://github.com/Rufflewind/detrojt/blob/master/README.md">README.md</a> for the caveats and security implications.</strong></p>
+
+<p>The core of the library rests upon the trio <code>TyConst</code>, <code>get_ty_const</code>, and
+<code>get_ty_const_key</code>.  They provide a mechanism for looking up data
+associated with a type using a persistent identifier (&quot;key&quot;).</p>
+
+<p><a href="trait.TyConst.html"><code>D: TyConst&lt;T&gt;</code></a> is a trait used to define such data.
+Each implementation associates an arbitrary value of type <code>D</code>
+(i.e. <code>Self</code>) with the type parameter <code>T</code>.  Conceptually, it&#39;s as if every
+<code>D</code> has its own table of data, indexed by <code>T</code>.  Within a given table,
+every <code>T</code> is associated with a unique <code>usize</code> key.</p>
+
+<p><a href="fn.get_ty_const_key.html"><code>get_ty_const_key</code></a> returns the unique key for
+the data associated with <code>T</code> in the table of <code>D</code>.  The key is persistent
+(serializable): it can be used in a later execution of the same program.
+The key is only guaranteed to be unique for a given <code>D</code> (i.e. the key is
+meaningless without knowing what <code>D</code> is).</p>
+
+<p><a href="fn.get_ty_const.html"><code>get_ty_const</code></a> uses the key to retrieve the data
+<code>D</code> associated with <code>T</code> without knowing what <code>T</code> was.  If the key is
+invalid, then <code>None</code> is returned.</p>
+
+<h2 id='example' class='section-header'><a href='#example'>Example</a></h2>
+<p>For a more interesting example, see the <a href="serde/index.html"><code>serde</code></a>
+submodule, which uses <code>TyConst</code> under the hood.</p>
+
+<pre class="rust rust-example-rendered">
+<span class="kw">use</span> <span class="ident">detrojt</span>::{<span class="ident">TyConst</span>, <span class="ident">get_ty_const</span>, <span class="ident">get_ty_const_key</span>};
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
+<span class="kw">struct</span> <span class="ident">Size</span>(<span class="ident">usize</span>);
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="lifetime">&#39;static</span><span class="op">&gt;</span> <span class="ident">TyConst</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Size</span> {
+    <span class="kw">fn</span> <span class="ident">get_data</span>() <span class="op">-&gt;</span> <span class="self">Self</span> { <span class="ident">Size</span>(<span class="ident">std</span>::<span class="ident">mem</span>::<span class="ident">size_of</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>()) }
+}
+
+<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">get_ty_const</span>(<span class="ident">get_ty_const_key</span>::<span class="op">&lt;</span><span class="ident">Size</span>, ()<span class="op">&gt;</span>()), <span class="prelude-val">Some</span>(<span class="ident">Size</span>(<span class="number">0</span>)));
+<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">get_ty_const</span>(<span class="ident">get_ty_const_key</span>::<span class="op">&lt;</span><span class="ident">Size</span>, <span class="ident">i64</span><span class="op">&gt;</span>()), <span class="prelude-val">Some</span>(<span class="ident">Size</span>(<span class="number">8</span>)));
+<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">get_ty_const</span>::<span class="op">&lt;</span><span class="ident">Size</span><span class="op">&gt;</span>(<span class="number">1</span>), <span class="prelude-val">None</span>);</pre>
+</div><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="mod" href="serde/index.html"
+                                  title='mod detrojt::serde'>serde</a></td>
+                           <td class='docblock-short'>
+                                <p>A collection of helper traits that can be used to add serialization
+support to user-defined traits.</p>
+                           </td>
+                       </tr></table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="trait" href="trait.TyConst.html"
+                                  title='trait detrojt::TyConst'>TyConst</a></td>
+                           <td class='docblock-short'>
+                                <p>This represents a mapping from a type T to some data of type <code>Self</code> (also
+referred to as <code>D</code> in other places).</p>
+                           </td>
+                       </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.get_ty_const.html"
+                                  title='fn detrojt::get_ty_const'>get_ty_const</a></td>
+                           <td class='docblock-short'>
+                                <p>Get the data in the impl for the type that matches the given key.  If the
+key is invalid, returns <code>None</code>.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.get_ty_const_key.html"
+                                  title='fn detrojt::get_ty_const_key'>get_ty_const_key</a></td>
+                           <td class='docblock-short'>
+                                <p>Get the key associated with <code>TyConst&lt;T&gt;</code> for <code>D</code>.  Instantiations of this
+function determine what goes into the type constant table for <code>D</code>.</p>
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "detrojt";
+    </script>
+    <script src="../main.js"></script>
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

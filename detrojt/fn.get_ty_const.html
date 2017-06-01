@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `get_ty_const` fn in crate `detrojt`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, get_ty_const">
+
+    <title>detrojt::get_ty_const - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../normalize.css">
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc fn">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='index.html'>detrojt</a></p><script>window.sidebarCurrent = {name: 'get_ty_const', ty: 'fn', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content">
+<h1 class='fqn'><span class='in-band'>Function <a href='index.html'>detrojt</a>::<wbr><a class="fn" href=''>get_ty_const</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a class='srclink' href='../src/detrojt/lib.rs.html#182-200' title='goto source code'>[src]</a></span></h1>
+<pre class='rust fn'>pub fn get_ty_const&lt;D:&nbsp;'static&gt;(key: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;D&gt;</pre><div class='docblock'><p>Get the data in the impl for the type that matches the given key.  If the
+key is invalid, returns <code>None</code>.</p>
+
+<p>Keys may be obtained using <a href="fn.get_ty_const_key.html"><code>get_ty_const_key</code></a>.</p>
+
+<p><strong>Due to limitations of the current implementation, calling this on an
+invalid key may sometimes cause arbitrary code execution (or a crash if
+you&#39;re lucky).</strong></p>
+
+<h2 id='implementation-details' class='section-header'><a href='#implementation-details'>Implementation details</a></h2>
+<p>As noted in <a href="fn.get_ty_const_key.html"><code>get_ty_const_key</code></a>, the key is
+actually the memory address to the corresponding vtable.  Extracting
+information from the vtable is pretty straightforward application of
+unsafe code.</p>
+
+<p>The hard part is making sure the key is valid.  Since we would rather
+return <code>None</code> than to segfault, the first steps is to ask the OS whether
+we can even read that memory.  Then, we pull out the vtable and check
+whether it looks sensible.</p>
+
+<p>Unfortunately, we have very little control over the contents of the
+vtable: most of it are just function pointers, and it&#39;s not easy to tell
+if a function pointer is right since every one is unique.  The vtable does
+have size and alignment information, so we can in principle squeeze in a
+128-bit magic number and check for that.  Alas, this is limited by the
+fact that Rust doesn&#39;t like exabyte-sized arrays, and the fact that Rust
+has not yet implemented support for custom alignments (and even if it
+does, we don&#39;t know if it would support alignments that aren&#39;t powers of
+two).  It would be even better if we could pick a random magic number for
+each build.</p>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "detrojt";
+    </script>
+    <script src="../main.js"></script>
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

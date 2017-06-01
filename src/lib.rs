@@ -1,29 +1,37 @@
 //! A hack to support deserialization of arbitrary trait objects.
 //!
+//! This an implementation of a workaround for [rust-lang/rfcs#668 "Encodable
+//! trait objects"][rust-lang/rfcs#668].
+//!
+//! **See [README.md][README.md] for the caveats and security implications.**
+//!
+//! [rust-lang/rfcs#668]: https://github.com/rust-lang/rfcs/issues/668
+//! [README.md]: https://github.com/Rufflewind/detrojt/blob/master/README.md
+//!
 //! The core of the library rests upon the trio `TyConst`, `get_ty_const`, and
 //! `get_ty_const_key`.  They provide a mechanism for looking up data
 //! associated with a type using a persistent identifier ("key").
 //!
-//! `D: TyConst<T>` is trait used to define such data.  Each implementation
-//! associates an arbitrary value of type `D` (i.e. `Self`) with the type
-//! parameter `T`.  Conceptually, it's as if every `D` has its own table of
-//! data, indexed by `T`.  Within a given table, every `T` is associated with
-//! a unique `usize` key.
+//! [`D: TyConst<T>`](trait.TyConst.html) is a trait used to define such data.
+//! Each implementation associates an arbitrary value of type `D`
+//! (i.e. `Self`) with the type parameter `T`.  Conceptually, it's as if every
+//! `D` has its own table of data, indexed by `T`.  Within a given table,
+//! every `T` is associated with a unique `usize` key.
 //!
-//! `get_ty_const_key` returns the unique key for the data associated with `T`
-//! in the table of `D`.  The key is persistent (serializable): it can be used
-//! for a later execution of the same program.  The key is only guaranteed to
-//! be unique for a given `D` (i.e. the key is meaningless without knowing
-//! what `D` is).
+//! [`get_ty_const_key`](fn.get_ty_const_key.html) returns the unique key for
+//! the data associated with `T` in the table of `D`.  The key is persistent
+//! (serializable): it can be used in a later execution of the same program.
+//! The key is only guaranteed to be unique for a given `D` (i.e. the key is
+//! meaningless without knowing what `D` is).
 //!
-//! `get_ty_const` uses the key to retrieve the data `D` associated with `T`
-//! without knowing what `T` was.  If the key is invalid, then `None` is
-//! returned.
+//! [`get_ty_const`](fn.get_ty_const.html) uses the key to retrieve the data
+//! `D` associated with `T` without knowing what `T` was.  If the key is
+//! invalid, then `None` is returned.
 //!
 //! ## Example
 //!
 //! For a more interesting example, see the [`serde`](serde/index.html)
-//! submodule.
+//! submodule, which uses `TyConst` under the hood.
 //!
 //! ```
 //! use detrojt::{TyConst, get_ty_const, get_ty_const_key};
@@ -99,15 +107,30 @@ impl<D: TyConst<T>, T: ?Sized + 'static> TyConstImpl<D> for Dummy<T> {
 /// This represents a mapping from a type T to some data of type `Self` (also
 /// referred to as `D` in other places).
 ///
-/// (The ordering of type parameters here is needed to avoid problems due to
-/// orphan rules.)
+/// You can implement this trait for your own datatype `D` to associate
+/// arbitrary data with types.  The data can be retrieved using
+/// [`get_ty_const`](fn.get_ty_const.html) even if `T` is not statically
+/// known.
+///
+/// The ordering of type parameters here is needed to avoid problems due to
+/// orphan rules.
 pub trait TyConst<T: ?Sized + 'static>: Sized + 'static {
     /// Retrieve the data.
     fn get_data() -> Self;
 }
 
-/// Get the key associated with `TyConst<T>` for `D`.  Uses of this function
-/// determine what goes into the type constant table for `D`.
+/// Get the key associated with `TyConst<T>` for `D`.  Instantiations of this
+/// function determine what goes into the type constant table for `D`.
+///
+/// The key can be used to retrieve the data `D` via
+/// [`get_ty_const`](fn.get_ty_const.html) even if `T` is not statically
+/// known.
+///
+/// ## Implementation details
+///
+/// This returns the memory offset of the vtable associated with `T` relative
+/// to some other vtable.  Naturally, we are making an assumption that the
+/// relative offsets of vtables don't change!
 pub fn get_ty_const_key<D: TyConst<T>, T: ?Sized + 'static>() -> usize {
     unsafe {
         let r0: TraitObject = std::mem::transmute(&() as &Send);
@@ -117,12 +140,37 @@ pub fn get_ty_const_key<D: TyConst<T>, T: ?Sized + 'static>() -> usize {
     }
 }
 
-/// Get the data in the impl for the type that matches the given key.
-/// If no such impl is found, returns `None`.
+/// Get the data in the impl for the type that matches the given key.  If the
+/// key is invalid, returns `None`.
+///
+/// Keys may be obtained using [`get_ty_const_key`](fn.get_ty_const_key.html).
 ///
 /// **Due to limitations of the current implementation, calling this on an
 /// invalid key may sometimes cause arbitrary code execution (or a crash if
 /// you're lucky).**
+///
+/// ## Implementation details
+///
+/// As noted in [`get_ty_const_key`](fn.get_ty_const_key.html), the key is
+/// actually the memory address to the corresponding vtable.  Extracting
+/// information from the vtable is pretty straightforward application of
+/// unsafe code.
+///
+/// The hard part is making sure the key is valid.  Since we would rather
+/// return `None` than to segfault, the first steps is to ask the OS whether
+/// we can even read that memory.  Then, we pull out the vtable and check
+/// whether it looks sensible.
+///
+/// Unfortunately, we have very little control over the contents of the
+/// vtable: most of it are just function pointers, and it's not easy to tell
+/// if a function pointer is right since every one is unique.  The vtable does
+/// have size and alignment information, so we can in principle squeeze in a
+/// 128-bit magic number and check for that.  Alas, this is limited by the
+/// fact that Rust doesn't like exabyte-sized arrays, and the fact that Rust
+/// has not yet implemented support for custom alignments (and even if it
+/// does, we don't know if it would support alignments that aren't powers of
+/// two).  It would be even better if we could pick a random magic number for
+/// each build.
 pub fn get_ty_const<D: 'static>(key: usize) -> Option<D> {
     unsafe {
         let r0: TraitObject = std::mem::transmute(&() as &Send);

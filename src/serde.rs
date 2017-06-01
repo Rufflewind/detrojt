@@ -10,23 +10,24 @@
 //! extern crate serde;
 //! extern crate serde_json;
 //!
+//! use std::rc::Rc;
 //! use detrojt::serde::{HasInterDeserialize, Trait, deserialize, serialize};
 //!
-//! // a minimal example trait that supports Debug
+//! // a minimal example trait that requires Debug
 //! trait MyTrait: Trait<serde_json::Value, MyTraitObj> + std::fmt::Debug {}
 //!
-//! // add a single implementation
+//! // add a few implementations
 //! impl MyTrait for String {}
+//! impl MyTrait for f64 {}
+//! impl MyTrait for (u8, MyTraitObj) {}
 //!
 //! // Create a wrapper type for the trait object.
 //! // The wrapper type must support From<T: MyTrait> and HasInterDeserialize.
-//! #[derive(Debug)]
-//! struct MyTraitObj(Box<MyTrait>);
+//! #[derive(Clone, Debug)]
+//! struct MyTraitObj(Rc<MyTrait>);
 //!
 //! impl<T: MyTrait + 'static> From<T> for MyTraitObj {
-//!     fn from(t: T) -> Self {
-//!         MyTraitObj(Box::new(t))
-//!     }
+//!     fn from(t: T) -> Self { MyTraitObj(Rc::new(t)) }
 //! }
 //!
 //! impl HasInterDeserialize for MyTraitObj {
@@ -35,26 +36,31 @@
 //!
 //! impl serde::Serialize for MyTraitObj {
 //!     fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
-//!         where S: serde::Serializer
-//!     {
-//!         serialize(&*self.0, s)
-//!     }
+//!         where S: serde::Serializer { serialize(&*self.0, s) }
 //! }
 //!
 //! impl<'de> serde::Deserialize<'de> for MyTraitObj {
 //!     fn deserialize<D>(d: D) -> Result<Self, D::Error>
-//!         where D: serde::Deserializer<'de>
-//!     {
-//!         deserialize(d)
-//!     }
+//!         where D: serde::Deserializer<'de> { deserialize(d) }
 //! }
 //!
-//! fn main() {
-//!     let a: MyTraitObj = MyTraitObj(Box::new("hello world".to_owned()));
-//!     let s = serde_json::to_value(&a).unwrap();
-//!     let b: MyTraitObj = serde_json::from_value(s).unwrap();
-//!     assert_eq!(format!("{:?}", a), format!("{:?}", b));
-//! }
+//! # fn test() -> serde_json::Result<()> {
+//! let a = MyTraitObj::from(String::from("hello world"));
+//! let b = MyTraitObj::from(std::f64::consts::PI);
+//! let c = MyTraitObj::from((42u8, b.clone()));
+//! let sa = serde_json::to_value(&a)?;
+//! let sb = serde_json::to_value(&b)?;
+//! let sc = serde_json::to_value(&c)?;
+//! let a2: MyTraitObj = serde_json::from_value(sa)?;
+//! let b2: MyTraitObj = serde_json::from_value(sb)?;
+//! let c2: MyTraitObj = serde_json::from_value(sc)?;
+//! assert_eq!(format!("{:?}", a), format!("{:?}", a2));
+//! assert_eq!(format!("{:?}", b), format!("{:?}", b2));
+//! assert_eq!(format!("{:?}", c), format!("{:?}", c2));
+//! assert_ne!(format!("{:?}", a), format!("{:?}", b2));
+//! assert_ne!(format!("{:?}", b), format!("{:?}", c2));
+//! assert_ne!(format!("{:?}", c), format!("{:?}", a2));
+//! # Ok(()) } fn main() { test().unwrap() }
 //! ```
 
 use std::fmt;

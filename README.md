@@ -16,7 +16,7 @@ Even for trusted data, deserializing may cause undefined behavior on platforms a
   - All vtables are mapped to a single contiguous block of memory, located at fixed positions relative to each other (same for every execution)
   - Trait objects have the layout `{ data: *mut _, vtable: *mut _ }`
   - Vtables have the layout `{ destructor: fn(_), size: usize, alignment: usize, ... }`
-  - A POSIX system with `/dev/random` (it shouldn't be too hard to port this to other platforms)
+  - A POSIX system with either `/dev/random` or `/dev/null` (it shouldn't be too hard to port this to other platforms)
   - 64-bit pointers (not entirely necessary, but 32-bit pointers would make it easier to exploit)
 
 If [Rust adds support for `#[repr(align = "N")]`](https://github.com/rust-lang/rust/issues/33626), it may be possible to use a custom alignment as a secondary sanity check.

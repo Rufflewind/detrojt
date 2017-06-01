@@ -59,8 +59,16 @@ use std::marker::PhantomData;
 
 #[cfg(any(unix))]
 unsafe fn ptr_try_read<T>(p: *const T) -> Option<T> {
-    let mut f = std::fs::File::create("/dev/random").unwrap();
-    let s = std::slice::from_raw_parts(p as *const u8, std::mem::size_of::<T>());
+    let mut opener = std::fs::OpenOptions::new();
+    opener.write(true);
+    let mut f = match opener.open("/dev/random").or_else(|_| {
+        opener.open("/dev/null")
+    }) {
+        Err(_) => return None,
+        Ok(f) => f,
+    };
+    let s = std::slice::from_raw_parts(p as *const u8,
+                                       std::mem::size_of::<T>());
     if f.write(s).is_ok() {
         Some(std::ptr::read(p))
     } else {

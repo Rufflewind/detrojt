@@ -1,5 +1,8 @@
 # Deserializeable trait objects
 
+[![Documentation](https://docs.rs/detrojt/badge.svg)](https://docs.rs/detrojt)
+[![Crates.io](https://img.shields.io/crates/v/detrojt.svg)](https://crates.io/crates/detrojt)
+
 [Documentation for the `master` branch](https://rufflewind.com/detrojt)
 
 A dirty hack to support deserialization of arbitrary trait objects.

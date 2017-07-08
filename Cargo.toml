@@ -1,13 +1,13 @@
 [package]
 name = "detrojt"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Phil Ruffwind <rf@rufflewind.com>"]
 description = "A hack to support deserialization of arbitrary trait objects"
 documentation = "https://docs.rs/detrojt"
 repository = "https://github.com/Rufflewind/detrojt"
 readme = "README.md"
 keywords = ["deserialization", "serialization", "trait"]
-categories = ["Encoding"]
+categories = ["encoding"]
 license = "MIT/Apache-2.0"
 exclude = [".gitignore", "Makefile"]
 

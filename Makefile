@@ -18,4 +18,4 @@ target/doc/.git/config:
 	&& git commit -m _ --allow-empty \
 	&& git remote add origin $$url
 
-.PHONY: all
+.PHONY: all deploy-doc
